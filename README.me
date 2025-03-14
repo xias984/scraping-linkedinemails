@@ -1,0 +1,81 @@
+Scraping LinkedIn Emails
+
+Questo progetto esegue lo scraping delle email dei contatti aziendali utilizzando Selenium e BeautifulSoup. L'applicazione è dockerizzata e include un database MySQL con interfaccia phpMyAdmin.
+
+📥 Clonazione del Repository
+
+Per clonare il progetto, eseguire il seguente comando:
+
+git clone https://github.com/costarelliengit/scraping-linkedinemails.git
+cd scraping-linkedinemails
+
+⚙️ Configurazione dell'Ambiente
+
+Assicurati di avere Docker e Docker Compose installati sul tuo sistema.
+
+Creazione del file .env
+
+Crea un file .env nella root del progetto e aggiungi le seguenti variabili d'ambiente:
+
+EMAIL_KOALA=example@example.com
+PASSWORD_KOALA=password
+BASE_URL=https://app.getkoala.com
+DB_NAME=scraping_db
+DB_USER=root
+DB_PASSWORD=rootpassword
+DB_HOST=mysql
+DB_PORT=3306
+
+🛠 Installazione e Avvio con Docker
+
+Costruzione dei container
+
+docker-compose build
+
+Avvio dei container
+
+docker-compose up -d
+
+Verifica dei container in esecuzione
+
+docker ps
+
+Accesso ai log dell'applicazione
+
+docker logs -f scraping_app
+
+🔧 Debug e Manutenzione
+
+Accesso alla shell del container
+
+Se hai bisogno di eseguire comandi all'interno del container, usa:
+
+docker exec -it scraping_app /bin/sh
+
+Arresto dell'applicazione
+
+Per arrestare i container in esecuzione:
+
+docker-compose down
+
+📊 Accesso al Database MySQL
+
+Dopo aver avviato l'applicazione, puoi accedere a phpMyAdmin per gestire il database:
+
+URL: http://localhost:8080
+
+User: root
+
+Password: rootpassword
+
+📝 Note
+
+Se riscontri problemi con Supervisor, puoi fermarlo manualmente eseguendo:
+
+docker exec -it scraping_app supervisorctl stop all
+
+Assicurati che le dipendenze di requirements.txt siano installate correttamente all'interno del container.
+
+📄 Licenza
+
+Questo progetto è rilasciato sotto la licenza MIT.
