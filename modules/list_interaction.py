@@ -39,7 +39,7 @@ class KoalaListProcessor:
                         time.sleep(3)
 
                         company = Company(self.driver, company_name, self.list_name)
-                        company.go_to_company_tab()
+                        company_data = company.fetch_company_data()
                         company.start_prospecting()
 
                         #input("Premi INVIO per continuare...")

@@ -22,12 +22,12 @@ class Company:
             "Per progetti Torino": {
                 "title_keywords": ["manager", "head of", "ceo", "cio", "chief", "it manager", "responsabile"],
                 "exclude_keywords": {"project", "hr", "marketing", "finance", "financial", "account", "fleet"},
-                "country": ["Italy", "italy"]
+                "country": ["Italy"]
             },
             "Per consulenza": {
                 "title_keywords": ["Head of", "Chief", "COO", "CEO", "Manager"],
                 "exclude_keywords": {"Project", "service", "marketing", "finance", "financial", "security"},
-                "country": ["Italy", "italy"]
+                "country": ["Italy"]
             }
         }
         return filters.get(self.list_name, {})
@@ -71,7 +71,7 @@ class Company:
         except Exception as e:
             Log.error(f"❌ Errore durante il ritorno alla lista '{self.list_name}': {e}")
     
-    def go_to_company_tab(self):
+    def fetch_company_data(self):
         try:
             company_element = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, "//button[div[text()='Company']]"))
@@ -80,6 +80,6 @@ class Company:
             time.sleep(3)
 
             company_data = Scraper(self.driver)
-            company_data.get_company_data()
+            return company_data.get_company_data()
         except Exception as e:
             Log.error(f"❌ Errore durante il clic su {self.name}: {e}")

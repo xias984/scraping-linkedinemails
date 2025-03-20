@@ -21,7 +21,7 @@ BASE_URL=https://app.getkoala.com
 DB_HOST=mysql
 DB_USER=root
 DB_PASSWORD=rootpassword
-DB_NAME=koala_scraper
+DB_NAME=scraping_db
 ```
 
 ### 3️⃣ Costruisci i container Docker

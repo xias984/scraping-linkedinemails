@@ -28,7 +28,7 @@ class Scraper:
 
             location_element = soup.find("div", text="Location")
             location = location_element.find_next_sibling("div").text.strip() if location_element else "N/A"
-            Log.info(location)
+
             location_parts = location.split(", ")
             if len (location_parts) >= 2:
                 city, country = location_parts[0], location_parts[1]
@@ -48,7 +48,6 @@ class Scraper:
                 "city": city
             }
 
-            Log.info(company_data)
             return company_data
 
         except Exception as e:

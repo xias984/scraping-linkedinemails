@@ -44,6 +44,7 @@ class DatabaseManager:
                     lastname TEXT NOT NULL,
                     role TEXT NOT NULL,
                     email TEXT NOT NULL UNIQUE,
+                    is_active BOOLEAN NOT NULL,
                     FOREIGN KEY (company_id) REFERENCES companies(id)
                 )
             """)
@@ -57,15 +58,15 @@ class DatabaseManager:
         finally:
             self.close()
 
-    def insert_company(self, name, url, revenue, industry, city, country):
+    def insert_company(self, name, url, revenue, industry, city, country, is_active):
         try:
             self.connect()
             cursor = self.conn.cursor()
 
             cursor.execute("""
-                INSERT OR IGNORE INTO companies (name, url, revenue, industry, city, country)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (name, url, revenue, industry, city, country))
+                INSERT OR IGNORE INTO companies (name, url, revenue, industry, city, country, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (name, url, revenue, industry, city, country, is_active))
 
             self.conn.commit()
             Log.info(f"✅ Azienda '{name}' inserita con successo.")
