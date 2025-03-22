@@ -10,14 +10,12 @@ class DatabaseManager:
     def connect(self):
         try:
             self.conn = sqlite3.connect(self.db_name)
-            Log.info(f"✅ Connessione al database '{self.db_name}' aperta con successo.")
         except Exception as e:
             Log.error(f"❌ Errore durante la connessione al database: {e}")
 
     def close(self):
         if self.conn:
             self.conn.close()
-            Log.info("✅ Connessione al database chiusa con successo.")
 
     def create_tables(self):
         try:
@@ -32,7 +30,9 @@ class DatabaseManager:
                     revenue TEXT,
                     industry TEXT,
                     city TEXT,
-                    country TEXT
+                    country TEXT,
+                    is_active BOOLEAN NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             """)
 
@@ -44,7 +44,7 @@ class DatabaseManager:
                     lastname TEXT NOT NULL,
                     role TEXT NOT NULL,
                     email TEXT NOT NULL UNIQUE,
-                    is_active BOOLEAN NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (company_id) REFERENCES companies(id)
                 )
             """)
@@ -58,22 +58,37 @@ class DatabaseManager:
         finally:
             self.close()
 
-    def insert_company(self, name, url, revenue, industry, city, country, is_active):
+    def insert_company(self, name, url, revenue, industry, city, country, email_found):
         try:
             self.connect()
             cursor = self.conn.cursor()
-
             cursor.execute("""
-                INSERT OR IGNORE INTO companies (name, url, revenue, industry, city, country, is_active)
+                INSERT INTO companies (name, url, revenue, industry, city, country, is_active)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (name, url, revenue, industry, city, country, is_active))
-
+            """, (name, url, revenue, industry, city, country, email_found))
             self.conn.commit()
-            Log.info(f"✅ Azienda '{name}' inserita con successo.")
+
+            company_id = cursor.lastrowid  # ✅ prende subito l'id sulla stessa connessione
+            Log.info(f"✅ Azienda '{name}' inserita con successo (ID: {company_id}).")
+            return company_id
 
         except Exception as e:
             Log.error(f"❌ Errore durante l'inserimento dell'azienda '{name}': {e}")
+            return None
 
+        finally:
+            self.close()
+
+    def get_last_inserted_company_id(self):
+        try:
+            self.connect()
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT last_insert_rowid()")
+            company_id = cursor.fetchone()[0]
+            return company_id
+        except Exception as e:
+            Log.error(f"❌ Errore nel recupero dell'ultimo ID azienda: {e}")
+            return None
         finally:
             self.close()
 
@@ -92,6 +107,22 @@ class DatabaseManager:
 
         except Exception as e:
             Log.error(f"❌ Errore durante l'inserimento del contatto '{name} {lastname}': {e}")
+
+        finally:
+            self.close()
+
+    def company_exists(self, name):
+        try:
+            self.connect()
+            cursor = self.conn.cursor()
+
+            cursor.execute("SELECT id FROM companies WHERE name = ?", (name,))
+            result = cursor.fetchone()
+            return result is not None
+
+        except Exception as e:
+            Log.error(f"❌ Errore durante il controllo esistenza azienda '{name}': {e}")
+            return False
 
         finally:
             self.close()

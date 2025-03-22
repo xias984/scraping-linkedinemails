@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from src.logger import Log
+import re
 
 class Scraper:
     def __init__(self, driver):
@@ -31,7 +32,7 @@ class Scraper:
 
             location_parts = location.split(", ")
             if len (location_parts) >= 2:
-                city, country = location_parts[0], location_parts[1]
+                city, country = location_parts[0], location_parts[1] + (", " +location_parts[2] if len(location_parts) > 2 else "")
             else:
                 city, country = location, "N/A"
 
@@ -56,42 +57,74 @@ class Scraper:
 
     def get_contact_data(self):
         try:
-            # Attendere il caricamento dei contatti
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.TAG_NAME, "body"))
             )
 
-            # Estrarre il codice HTML della pagina
-            page_source = self.driver.page_source
-            soup = BeautifulSoup(page_source, "html.parser")
+            soup = BeautifulSoup(self.driver.page_source, "html.parser")
+
+            contact_rows = soup.find_all("tr", attrs={"role": "group"})
 
             contacts = []
-            contact_elements = soup.find_all("div", class_="contact-card")  # Sostituisci con la classe corretta
 
-            for contact in contact_elements:
-                name_element = contact.find("div", class_="contact-name")
-                name = name_element.text.strip() if name_element else "N/A"
+            for row in contact_rows:
+                try:
+                    first_name, last_name = self.extract_name(row)
+                    role = self.extract_role(row)
+                    email = self.extract_email(row)
+                    #location = self.extract_location(row)
 
-                lastname_element = contact.find("div", class_="contact-lastname")
-                lastname = lastname_element.text.strip() if lastname_element else "N/A"
+                    contact_data = {
+                        "name": first_name,
+                        "lastname": last_name,
+                        "role": role,
+                        "email": email
+                    }
 
-                role_element = contact.find("div", class_="contact-role")
-                role = role_element.text.strip() if role_element else "N/A"
+                    contacts.append(contact_data)
 
-                email_element = contact.find("div", class_="contact-email")
-                email = email_element.text.strip() if email_element else "N/A"
+                except Exception as e:
+                    Log.error(f"❌ Errore nell'estrazione di un contatto: {e}")
 
-                contact_data = {
-                    "name": name,
-                    "lastname": lastname,
-                    "role": role,
-                    "email": email
-                }
-                contacts.append(contact_data)
-
-            Log.info(f"✅ {len(contacts)} contatti estratti.")
             return contacts
 
         except Exception as e:
-            Log.error(f"❌ Errore durante l'estrazione dei contatti: {e}")
+            Log.error(f"❌ Errore generale durante l'estrazione dei dati dei contatti: {e}")
             return []
+        
+    def extract_name(self, row):
+        try:
+            span = row.find("span", string=re.compile(r"^[A-Z][a-z]+ [A-Z][a-z]+$"))
+            full_name = span.text.strip() if span else "N/A"
+            parts = full_name.split()
+            return parts[0], " ".join(parts[1:]) if len(parts) > 1 else "N/A"
+        except Exception as e:
+            Log.error(f"❌ Errore nel parsing del nome: {e}")
+            return "N/A", "N/A"
+
+    def extract_role(self, row):
+        try:
+            keywords = re.compile(r"\b(Manager|Chief|Officer|Engineer|Developer|Head|Vice|President|Lead|Director|Founder|Data|Analyst|Intern|Consultant)\b", re.IGNORECASE)
+            role_span = row.find("span", string=keywords)
+            return role_span.text.strip() if role_span else "N/A"
+        except Exception as e:
+            Log.error(f"❌ Errore nel parsing del ruolo: {e}")
+            return "N/A"
+
+    def extract_email(self, row):
+        try:
+            span = row.find("span", string=re.compile(r"@"))
+            return span.text.strip() if span else ""
+        except Exception as e:
+            Log.error(f"❌ Errore nel parsing dell'email: {e}")
+            return ""
+
+    '''
+    def extract_location(self, row):
+        try:
+            p = row.find("p", string=re.compile(r"\w+,\s*\w+"))
+            return p.text.strip() if p else "N/A"
+        except Exception as e:
+            Log.error(f"❌ Errore nel parsing della location: {e}")
+            return "N/A"
+    '''

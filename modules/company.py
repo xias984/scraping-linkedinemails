@@ -20,7 +20,7 @@ class Company:
     def get_filters(self):
         filters = {
             "Per progetti Torino": {
-                "title_keywords": ["manager", "head of", "ceo", "cio", "chief", "it manager", "responsabile"],
+                "title_keywords": ["manager", "head of", "ceo", "cio", "chief", "it manager", "responsabile", "founder"],
                 "exclude_keywords": {"project", "hr", "marketing", "finance", "financial", "account", "fleet"},
                 "country": ["Italy"]
             },
@@ -32,7 +32,7 @@ class Company:
         }
         return filters.get(self.list_name, {})
 
-    def start_prospecting(self):
+    def start_prospecting(self, company_data):
         try:
             start_button = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, "//a[contains(@class, 'chakra-button') and contains(text(), 'Start prospecting')]"))
@@ -46,8 +46,8 @@ class Company:
                 exclude_keywords=filters.get("exclude_keywords"),
                 country=filters.get("country")
             )
-            #self.contacts.select_data()
-            #self.contacts.enrich_emails()
+
+            self.contacts.process_contacts(company_data)
         except Exception as e:
             Log.error(f"❌ Errore durante il 'Start prospecting' per {self.name}: {e}")
 

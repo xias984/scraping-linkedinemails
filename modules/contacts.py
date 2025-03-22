@@ -4,27 +4,27 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 import time
 from src.logger import Log
+from src.database import DatabaseManager as DB
+from modules.scraper import Scraper
 import pdb
 
 class Contacts:
     def __init__(self, driver):
         self.driver = driver
+        self.db = DB()
+        self.scraper = Scraper(driver)
 
     def _open_filter_section(self, label_popup):
-        """Apre il filtro specificato e restituisce l'elemento del popup."""
         try:
             filter_button = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, f"//button[.//p[text()='{label_popup}']]"))
             )
             
-            # Assicuriamoci che sia visibile e scrolliamolo nella visuale
             self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", filter_button)
-            time.sleep(1)  # Un piccolo delay per evitare problemi con tooltip
+            time.sleep(1)
             
-            # Aspettiamo che sia cliccabile
             WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(filter_button))
             
-            # Proviamo a cliccare tramite JavaScript se Selenium fallisce
             try:
                 filter_button.click()
             except:
@@ -164,3 +164,140 @@ class Contacts:
 
         except Exception as e:
             Log.error(f"❌ Errore durante il filtraggio dei contatti: {e}")
+
+    def enrich_email(self, index):
+        """Effettua l'enrichment per il contatto all'indice specificato e restituisce l'email trovata o None."""
+        try:
+            find_email_buttons = self.driver.find_elements(By.XPATH, "//button[@aria-label='Find email address']")
+            Log.debug(f"🔎 Trovati {len(find_email_buttons)} pulsanti 'Find email address'.")
+
+            if index >= len(find_email_buttons):
+                Log.warning(f"⚠️ Nessun pulsante 'Find email address' all'indice {index}.")
+                return None
+
+            button = find_email_buttons[index]
+            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", button)
+            time.sleep(1)
+            self.driver.execute_script("arguments[0].click();", button)
+            Log.info(f"✅ Cliccato su 'Find email address' per contatto [{index}].")
+
+            # Attendi stato "Enriching..."
+            try:
+                WebDriverWait(self.driver, 30).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, "//button[@aria-label='Find email address' and contains(text(), 'Enriching')]")
+                    )
+                )
+                Log.info(f"⏳ Enrichment in corso per contatto [{index}]...")
+
+            except:
+                Log.warning(f"⚠️ Timeout enrichment per contatto [{index}], continuo comunque...")
+
+            # Controlla se compare una email
+            try:
+                email_element = WebDriverWait(self.driver, 30).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, "//span[contains(@class, 'chakra-text') and contains(text(), '@')]")
+                    )
+                )
+                email = email_element.text.strip()
+                Log.info(f"📩 Email trovata per contatto [{index}]: {email}")
+                return email
+
+            except:
+                # Controllo alternativo: "No email found"
+                no_email = self.driver.find_elements(By.XPATH, "//span[contains(text(), 'No email found')]")
+                if no_email:
+                    Log.warning(f"🚫 Nessuna email trovata per contatto [{index}].")
+                else:
+                    Log.error(f"❌ Errore sconosciuto durante l'enrichment del contatto [{index}].")
+                return None
+
+        except Exception as e:
+            Log.error(f"❌ Errore nell'enrichment del contatto [{index}].")
+            return None
+
+
+    def next_page(self):
+        """Cambia pagina se il pulsante 'Next' non è disabilitato."""
+        try:
+            next_buttons = self.driver.find_elements(By.XPATH, "//button[normalize-space(text())='Next' and not(@disabled)]")
+
+            if next_buttons:
+                next_button = next_buttons[0]
+                if next_button.is_displayed() and next_button.is_enabled():
+                    self.driver.execute_script("arguments[0].click();", next_button)
+                    time.sleep(3)
+                    return True
+                else:
+                    return False
+            else:
+                return False
+
+        except Exception as e:
+            Log.error(f"❌ Errore durante il cambio pagina nei contatti.")
+            return False
+        
+    def process_contacts(self, company_data):
+        all_contacts = []
+        email_found = False
+        pagina = 1
+
+        while True:
+            try:
+                contact_list = self.scraper.get_contact_data()
+
+                for index, contact in enumerate(contact_list):
+                    email = contact.get('email', '').strip()
+                    Log.debug(f"📧 Contatto [{index}] email: {email}")
+
+                    if email is None or email == '':
+                        Log.debug(f"📧 Contatto senza email, arricchimento...")
+                        enriched_email = self.enrich_email(index)
+                        if enriched_email:
+                            contact['email'] = enriched_email
+                            email_found = True 
+                            all_contacts.append(contact)
+                        else:
+                            Log.warning(f"⛔ Contatto [{index}] ignorato: nessuna email trovata.")
+                    else:
+                        email_found = True
+                        all_contacts.append(contact)
+                        Log.info(f"✅ Contatto [{index}] con email già presente.")
+
+                if not self.next_page():
+                    break
+                else:
+                    pagina += 1
+
+            except Exception as e:
+                Log.error(f"❌ Errore durante il processamento dei contatti: {e}")
+                break
+
+        try:
+            company_id = self.db.insert_company(
+                company_data['name'],
+                company_data['url'],
+                company_data['revenue'],
+                company_data['industry'],
+                company_data['city'],
+                company_data['country'],
+                email_found
+            )
+
+            if not company_id:
+                Log.error("❌ Errore durante l'inserimento dell'azienda.")
+                return
+
+            for contact in all_contacts:
+                if contact.get('email') and "@" in contact['email']:
+                    self.db.insert_contact(
+                        company_id,
+                        contact['name'],
+                        contact['lastname'],
+                        contact['role'],
+                        contact['email']
+                    )
+
+        except Exception as e:
+            Log.error(f"❌ Errore nel salvataggio dei dati: {e}")

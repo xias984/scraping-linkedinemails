@@ -17,7 +17,7 @@ class KoalaListProcessor:
             )
             list_element.click()
         except Exception as e:
-            Log.error(f"❌ Errore nell'apertura della lista '{self.list_name}': {e}")
+            Log.error(f"❌ Errore nell'apertura della lista '{self.list_name}'.")
 
     def process_companies(self):
         try:
@@ -35,12 +35,20 @@ class KoalaListProcessor:
                         company_element = companies[index]
                         company_name = company_element.get_attribute("title")
 
+                        # Verifico se esiste già nel DB
+                        from src.database import DatabaseManager
+                        db = DatabaseManager()
+
+                        if db.company_exists(company_name):
+                            Log.info(f"✅ Azienda '{company_name}' già inserita nel database.")
+                            continue
+
                         self.driver.execute_script("arguments[0].click();", company_element)
                         time.sleep(3)
 
                         company = Company(self.driver, company_name, self.list_name)
                         company_data = company.fetch_company_data()
-                        company.start_prospecting()
+                        company.start_prospecting(company_data)
 
                         #input("Premi INVIO per continuare...")
                         company.go_to_list_company()
@@ -50,13 +58,13 @@ class KoalaListProcessor:
                         )
 
                     except Exception as e:
-                        Log.error(f"⚠ Errore con l'azienda {company_name}: {e}")
+                        Log.error(f"⚠ Errore con l'azienda {company_name}.")
 
                 if not self.next_page():
                     break
 
         except Exception as e:
-            Log.error(f"❌ Errore durante il processo delle aziende: {e}")
+            Log.error(f"❌ Errore durante il processo delle aziende.")
 
     def next_page(self):
         try:
@@ -77,3 +85,4 @@ class KoalaListProcessor:
         except:
             Log.error("❌ Errore durante la gestione della paginazione.")
             return False
+        
