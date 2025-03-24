@@ -6,7 +6,6 @@ import time
 from src.logger import Log
 from src.database import DatabaseManager as DB
 from modules.scraper import Scraper
-import pdb
 
 class Contacts:
     def __init__(self, driver):
@@ -183,7 +182,7 @@ class Contacts:
 
             # Attendi stato "Enriching..."
             try:
-                WebDriverWait(self.driver, 30).until(
+                WebDriverWait(self.driver, 60).until(
                     EC.presence_of_element_located(
                         (By.XPATH, "//button[@aria-label='Find email address' and contains(text(), 'Enriching')]")
                     )
@@ -195,7 +194,7 @@ class Contacts:
 
             # Controlla se compare una email
             try:
-                email_element = WebDriverWait(self.driver, 30).until(
+                email_element = WebDriverWait(self.driver, 60).until(
                     EC.presence_of_element_located(
                         (By.XPATH, "//span[contains(@class, 'chakra-text') and contains(text(), '@')]")
                     )
@@ -238,7 +237,7 @@ class Contacts:
             Log.error(f"❌ Errore durante il cambio pagina nei contatti.")
             return False
         
-    def process_contacts(self, company_data):
+    def process_contacts(self, list_name, company_data):
         all_contacts = []
         email_found = False
         pagina = 1
@@ -282,7 +281,8 @@ class Contacts:
                 company_data['industry'],
                 company_data['city'],
                 company_data['country'],
-                email_found
+                email_found,
+                list_name
             )
 
             if not company_id:

@@ -5,7 +5,6 @@ import time
 from src.logger import Log
 from modules.scraper import Scraper
 from modules.contacts import Contacts
-from src.database import DatabaseManager
 
 class Company:
     def __init__(self, driver, name, list_name):
@@ -14,7 +13,6 @@ class Company:
         self.list_name = list_name
         self.scraper = Scraper(driver)
         self.contacts = Contacts(driver)
-        self.db = DatabaseManager()
         self.list_url = driver.current_url
 
     def get_filters(self):
@@ -47,7 +45,7 @@ class Company:
                 country=filters.get("country")
             )
 
-            self.contacts.process_contacts(company_data)
+            self.contacts.process_contacts(self.list_name, company_data)
         except Exception as e:
             Log.error(f"❌ Errore durante il 'Start prospecting' per {self.name}: {e}")
 

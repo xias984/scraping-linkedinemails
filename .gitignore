@@ -1,6 +1,19 @@
-__pycache__/*
-*/__pycache__/*
+# Virtualenv
+env/
 .env
-drivers/*
-logs/*
-env/*
+
+# Python cache
+__pycache__/
+**/__pycache__/
+
+# Log files
+logs/
+*.log
+
+# Chrome driver
+backend/drivers/
+
+# Database
+linkedin_data.db
+
+backend/.env

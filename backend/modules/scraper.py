@@ -104,9 +104,18 @@ class Scraper:
 
     def extract_role(self, row):
         try:
-            keywords = re.compile(r"\b(Manager|Chief|Officer|Engineer|Developer|Head|Vice|President|Lead|Director|Founder|Data|Analyst|Intern|Consultant)\b", re.IGNORECASE)
-            role_span = row.find("span", string=keywords)
-            return role_span.text.strip() if role_span else "N/A"
+            role_keywords = re.compile(
+                r"(manager|head|ceo|cio|chief|it manager|responsabile|founder|coo|responsabile|project|account)",
+                re.IGNORECASE
+            )
+
+            role_span = row.find("span", string=role_keywords)
+
+            if role_span:
+                return role_span.text.strip()
+
+            fallback = row.find(string=role_keywords)
+            return fallback.strip() if fallback else "N/A"
         except Exception as e:
             Log.error(f"❌ Errore nel parsing del ruolo: {e}")
             return "N/A"

@@ -32,6 +32,7 @@ class DatabaseManager:
                     city TEXT,
                     country TEXT,
                     is_active BOOLEAN NOT NULL,
+                    type_company TEXT NOT NULL,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -58,14 +59,14 @@ class DatabaseManager:
         finally:
             self.close()
 
-    def insert_company(self, name, url, revenue, industry, city, country, email_found):
+    def insert_company(self, name, url, revenue, industry, city, country, email_found, type_company):
         try:
             self.connect()
             cursor = self.conn.cursor()
             cursor.execute("""
-                INSERT INTO companies (name, url, revenue, industry, city, country, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (name, url, revenue, industry, city, country, email_found))
+                INSERT INTO companies (name, url, revenue, industry, city, country, is_active, type_company)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (name, url, revenue, industry, city, country, email_found, type_company))
             self.conn.commit()
 
             company_id = cursor.lastrowid  # ✅ prende subito l'id sulla stessa connessione
