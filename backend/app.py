@@ -10,7 +10,7 @@ def configure_webdriver(headless=False):
     options = webdriver.ChromeOptions()
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.add_argument("--user-data-dir=C:/Users/CostarelliD/chrome-koala-profile")
+    #options.add_argument("--user-data-dir=C:/Users/CostarelliD/chrome-koala-profile")
 
 
     if headless:
@@ -42,16 +42,6 @@ def process_list(list_name, headless):
         Log.info(f"🚪 WebDriver chiuso per '{list_name}'.")
 
 if __name__ == "__main__":
-    '''process_torino = multiprocessing.Process(target=process_list, args=("Per progetti Torino",))
-    process_consulenza = multiprocessing.Process(target=process_list, args=("Per consulenza",))
-
-    process_torino.start()
-    process_consulenza.start()
-
-    process_torino.join()
-    process_consulenza.join()
-
-    '''
     from src.database import DatabaseManager
 
     db = DatabaseManager()

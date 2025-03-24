@@ -47,4 +47,4 @@ class KoalaAuth:
             Log.info("✅ Login effettuato con successo!")
 
         except Exception as e:
-            Log.error(f"❌ Errore durante il login: {e}")
+            Log.error(f"❌ Errore durante il login.")

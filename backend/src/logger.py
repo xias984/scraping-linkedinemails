@@ -4,7 +4,7 @@ from datetime import datetime
 from config.settings import Settings
 
 # Percorso file di log
-log_dir = "../logs"
+log_dir = "logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
