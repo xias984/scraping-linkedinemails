@@ -1,4 +1,3 @@
-import multiprocessing
 from selenium import webdriver
 from src.auth import KoalaAuth
 from src.logger import Log

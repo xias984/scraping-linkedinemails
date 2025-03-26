@@ -47,7 +47,7 @@ class Company:
 
             self.contacts.process_contacts(self.list_name, company_data)
         except Exception as e:
-            Log.error(f"❌ Errore durante il 'Start prospecting' per {self.name}: {e}")
+            Log.error(f"❌ Errore durante il 'Start prospecting' per {self.name}.")
 
     def go_to_list_company(self):
         try:
@@ -67,7 +67,7 @@ class Company:
             time.sleep(2)
 
         except Exception as e:
-            Log.error(f"❌ Errore durante il ritorno alla lista '{self.list_name}': {e}")
+            Log.error(f"❌ Errore durante il ritorno alla lista '{self.list_name}'.")
     
     def fetch_company_data(self):
         try:
@@ -80,4 +80,4 @@ class Company:
             company_data = Scraper(self.driver)
             return company_data.get_company_data()
         except Exception as e:
-            Log.error(f"❌ Errore durante il clic su {self.name}: {e}")
+            Log.error(f"❌ Tab company non trovata su {self.name}.")

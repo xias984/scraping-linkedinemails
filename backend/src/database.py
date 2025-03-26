@@ -70,11 +70,11 @@ class DatabaseManager:
             self.conn.commit()
 
             company_id = cursor.lastrowid  # ✅ prende subito l'id sulla stessa connessione
-            Log.info(f"✅ Azienda '{name}' inserita con successo (ID: {company_id}).")
+            Log.info(f"✅ Azienda '{name}' inserita con successo (ID: {company_id}) in {type_company}.")
             return company_id
 
         except Exception as e:
-            Log.error(f"❌ Errore durante l'inserimento dell'azienda '{name}': {e}")
+            Log.error(f"❌ Errore durante l'inserimento dell'azienda '{name}' in {type_company}.")
             return None
 
         finally:
@@ -107,7 +107,7 @@ class DatabaseManager:
             Log.info(f"✅ Contatto '{name} {lastname}' inserito con successo.")
 
         except Exception as e:
-            Log.error(f"❌ Errore durante l'inserimento del contatto '{name} {lastname}': {e}")
+            Log.error(f"❌ Errore durante l'inserimento del contatto '{email}'.")
 
         finally:
             self.close()

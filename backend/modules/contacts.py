@@ -79,12 +79,18 @@ class Contacts:
         # XPath per l'input di ricerca
         xpath = ".//input[contains(@class, 'koala-7e4x79')]"
 
-        try:
-            # Attendere che l'input sia cliccabile
-            search_input = WebDriverWait(self.driver, 10).until(
+        def find_input():
+            return WebDriverWait(self.driver, 10).until(
                 EC.visibility_of_element_located((By.XPATH, xpath))
             )
-            
+
+        search_input = self.retry_on_exception(find_input, retries=3, delay=2, name="input paese")
+
+        if not search_input:
+            Log.error("❌ Impossibile trovare il campo di input per il paese.")
+            return
+
+        try:
             if search_input.get_attribute("disabled") or search_input.get_attribute("readonly"):
                 Log.error("❌ L'input è disabilitato o in sola lettura.")
                 return
@@ -115,6 +121,19 @@ class Contacts:
         except Exception as e:
             Log.error("❌ Errore durante la ricerca dell'input.")
             exit()
+
+    @staticmethod
+    def retry_on_exception(func, retries=3, delay=2, name=""):
+        for attempt in range(1, retries + 1):
+            try:
+                return func()
+            except Exception as e:
+                Log.warning(f"⚠️ [{name}] Tentativo {attempt}/{retries} fallito.")
+                if attempt < retries:
+                    time.sleep(delay)
+                else:
+                    Log.error(f"❌ [{name}] Tutti i tentativi falliti.")
+                    return None
         
     def _select_all_checkboxes(self, label):
         xpath = f"//input[@class='chakra-checkbox__input' and ancestor::label[contains(@class, 'chakra-checkbox')]//p[contains(text(), '{label}')]]"
@@ -260,9 +279,9 @@ class Contacts:
                         else:
                             Log.warning(f"⛔ Contatto [{index}] ignorato: nessuna email trovata.")
                     else:
-                        email_found = True
+                        email_found = False
                         all_contacts.append(contact)
-                        Log.info(f"✅ Contatto [{index}] con email già presente.")
+                        Log.info(f"✅ Contatto [{index}] con email mancante.")
 
                 if not self.next_page():
                     break

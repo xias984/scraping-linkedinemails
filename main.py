@@ -4,6 +4,7 @@ from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 from kivy.uix.togglebutton import ToggleButton
 from kivy.clock import Clock
@@ -43,8 +44,8 @@ class MainLayout(BoxLayout):
 
     def make_scraping_buttons(self, label, list_id):
         layout = BoxLayout(size_hint_y=None, height=40)
-        start_btn = Button(text=f"Start {label}")
-        stop_btn = Button(text=f"Stop {label}")
+        start_btn = ToggleButton(text=f"Start {label}", group=f"group_{label}")
+        stop_btn = ToggleButton(text=f"Stop {label}", group=f"group_{label}")
 
         start_btn.bind(on_press=partial(self.run_scraping, list_id, label))
         stop_btn.bind(on_press=partial(self.stop_scraping, list_id, label))
@@ -80,6 +81,7 @@ class MainLayout(BoxLayout):
 
         process = subprocess.Popen(cmd)
         PROCESS_REFERENCES[list_id] = process
+        instance.state = 'down'
         print(f"🟢 Avviato scraping {label}")
 
     def stop_scraping(self, list_id, label, instance):
@@ -87,6 +89,7 @@ class MainLayout(BoxLayout):
         if proc and proc.poll() is None:
             proc.terminate()
             print(f"🔴 Arrestato scraping {label}")
+        instance.state = 'normal'
 
     def update_logs(self, *args):
         try:
@@ -100,6 +103,7 @@ class MainLayout(BoxLayout):
 
     def export_excel(self, list_name, instance):
         try:
+            import webbrowser
             import pandas as pd
             import sqlite3
 
@@ -122,9 +126,28 @@ class MainLayout(BoxLayout):
             """
             df = pd.read_sql_query(query_sql, conn)
 
-            export_name = f"export_{list_name.replace(' ', '_').lower()}.xlsx"
+            export_name = os.path.abspath(f"export_{list_name.replace(' ', '_').lower()}.xlsx")
             df.to_excel(export_name, index=False)
-            print(f"✅ Esportato: {export_name}")
+
+            content = BoxLayout(orientation='vertical', spacing=10, padding=10)
+            content.add_widget(Label(text=f"Esportazione completata:\n{export_name}"))
+
+            open_button = Button(text="Apri File")
+            close_button = Button(text="Chiudi")
+
+            popup = Popup(title="Esportazione completata", content=content, size_hint=(None, None), size=(500, 200), auto_dismiss=False)
+
+            open_button.bind(on_press=lambda *a: (webbrowser.open(export_name), popup.dismiss()))
+            close_button.bind(on_press=popup.dismiss)
+
+            btn_layout = BoxLayout(size_hint_y=None, height=40, spacing=10)
+            btn_layout.add_widget(open_button)
+            btn_layout.add_widget(close_button)
+
+            content.add_widget(btn_layout)
+            print(f"✅ Esportazione completata: {export_name}")
+
+            popup.open()
         except Exception as e:
             print(f"❌ Errore esportazione: {e}")
 
